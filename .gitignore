@@ -1,3 +1,6 @@
-data/
-credentials.py
-credentials_local.py
+csv/
+torrents/
+py/credentials.py
+py/credentials_local.py
+*.zst
+*.csv
