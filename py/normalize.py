@@ -163,22 +163,24 @@ if __name__ == "__main__":
         raise SystemExit(1)
 
     # interest × city
-    raw_ixc   = make_interest_x_city_raw(df)
-    tfidf_ixc = make_interest_x_city_tfidf(raw_ixc)
-    pmi_ixc   = make_interest_x_city_pmi(raw_ixc, df)
+    raw_ixc = make_interest_x_city_raw(df)
+    # TF-IDF degenerated on Phase 0 data (all subs present in all cities → IDF constant).
+    # PMI chosen as primary method. Function retained for reference.
+    # tfidf_ixc = make_interest_x_city_tfidf(raw_ixc)
+    pmi_ixc = make_interest_x_city_pmi(raw_ixc, df)
 
-    for name, tbl in [('raw', raw_ixc), ('tfidf', tfidf_ixc), ('pmi', pmi_ixc)]:
+    for name, tbl in [('raw', raw_ixc), ('pmi', pmi_ixc)]:
         tbl.to_csv(os.path.join(OUTPUT_DIR, f"{name}_interest_x_city.csv"))
         print_seattle(f"{name} interest_x_city", tbl)
 
     # interest × interest
-    for method in ('raw', 'tfidf', 'pmi'):
+    for method in ('raw', 'pmi'):
         tbl = make_interest_x_interest(df, method)
         tbl.to_csv(os.path.join(OUTPUT_DIR, f"{method}_interest_x_interest.csv"))
         print_seattle(f"{method} interest_x_interest", tbl)
 
     # city × city
-    for name, ixc in [('raw', raw_ixc), ('tfidf', tfidf_ixc), ('pmi', pmi_ixc)]:
+    for name, ixc in [('raw', raw_ixc), ('pmi', pmi_ixc)]:
         tbl = make_city_x_city(ixc)
         tbl.to_csv(os.path.join(OUTPUT_DIR, f"{name}_city_x_city.csv"))
         print_seattle(f"{name} city_x_city", tbl)
