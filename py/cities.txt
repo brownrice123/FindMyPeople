@@ -1,0 +1,37 @@
+# cities.txt
+# Subreddits representing target metro areas for Find My People v1
+#
+# Inclusion criteria:
+# - Metro population >= 1M (ensures sufficient Reddit user base)
+# - Subreddit has >= ~50k members (ensures enough commenters for normalization)
+# - Geographic diversity enforced across regions (not coast-heavy)
+# - One subreddit per metro — primary city sub only, not regional variants
+#
+# 25 cities selected. Smaller metros (e.g. Salt Lake City, New Orleans) included
+# where subreddit activity is sufficient and regional diversity warrants it.
+
+Seattle
+Portland
+SanFrancisco
+LosAngeles
+sandiego
+phoenix
+Denver
+SaltLakeCity
+Dallas
+Austin
+houston
+NewOrleans
+Chicago
+Minneapolis
+detroit
+Cleveland
+Atlanta
+Miami
+Charlotte
+washington
+philadelphia
+boston
+nyc
+Pittsburgh
+Columbus

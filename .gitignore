@@ -4,3 +4,4 @@ py/credentials.py
 py/credentials_local.py
 *.zst
 *.csv
+.env

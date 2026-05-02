@@ -1,0 +1,71 @@
+# interests.txt
+# Subreddits representing interest communities for Find My People v1
+#
+# Inclusion criteria:
+# - Specific enough to carry identity signal (r/sourdough, not r/food)
+# - Plausibly clusters geographically (outdoor sports, local culture, lifestyle)
+# - Excludes default/national subreddits with no geographic signal (r/AskReddit, r/funny)
+# - Excludes pure hobby subreddits with no community identity (r/DIY, r/cooking)
+# - Mix of physical activities, intellectual interests, subcultures, and lifestyle identities
+# - ~50 subs: enough breadth to surface non-obvious crossovers without inflating download time
+#
+# These are NOT meant to be exhaustive — they are seeds for the interest graph.
+# Embeddings layer will expand each into a broader cluster.
+
+# Outdoor / Physical
+climbing
+Ultralight
+whitewater
+mountainbiking
+bikepacking
+Fishing
+Kayaking
+skiing
+trailrunning
+running
+
+# Food / Craft
+sourdough
+fermentation
+homebrewing
+mead
+cheesemaking
+foraging
+cajunfood
+smoking
+
+# Intellectual / Maker
+homelab
+3Dprinting
+AmateurRadio
+FPGA
+raspberry_pi
+diyelectronics
+woodworking
+
+# Subculture / Identity
+DnD
+boardgames
+magicTCG
+warhammer40k
+anime
+manga
+vinyl
+synthesizers
+WeAreTheMusicMakers
+
+# Lifestyle / Values
+vandwellers
+UrbanHomestead
+preppers
+minimalism
+ZeroWaste
+financialindependence
+leanfire
+
+# Wellness / Movement
+yoga
+bjj
+kettlebell
+cycling
+velo
