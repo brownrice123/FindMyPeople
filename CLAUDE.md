@@ -1,5 +1,16 @@
 # FindMyPeople — Reddit Pipeline
 
+## Brian's machines
+
+| Machine | OS | RAM | Storage | Display | Notes |
+|---|---|---|---|---|---|
+| Desktop Mac (M1) | macOS | 8 GB | 250 GB | 2 medium monitors | Primary/comfort machine |
+| Windows laptop | Windows 11 | 16 GB | 500 GB | Small laptop screen | More powerful, portable |
+
+Brian defaults to the Mac but keeps projects git-synced so he can switch to the laptop when it matters.
+
+**Flag when to use the laptop:** Any task where 8 GB RAM is a meaningful constraint — e.g. running `normalize-fullset.py` on the full dataset, processing large `.zst` files, or anything that previously OOM'd on the Mac. The laptop has 2× the RAM and may clear tasks that kill the Mac.
+
 ## Project overview
 Match people across cities based on shared Reddit interests. Pipeline: parse Pushshift dumps → build user-interest and user-city mappings → compute similarity matrices (PMI) → store results.
 
@@ -36,6 +47,28 @@ Sparse-matrix pipeline for the full dataset. Key difference: `make_interest_x_in
    - **interest × city** — which subs are over/under-represented per city (PMI)
    - **interest × interest** — sub-to-sub co-occurrence similarity (PMI)
    - **city × city** — cosine similarity between cities based on interest vectors
+
+## CSV canonicalization
+
+The `/csv/interests/` directory contains semantically duplicate files (e.g. `Warhammer_comments.csv` + `Warhammer40k_comments.csv`, `motorcycle` + `motorcycles`). These are merged in-memory via `CANONICAL_SUBS` in `normalize.py` — originals are preserved on disk.
+
+**Confirmed merges (active):**
+- `motorcycle` → `motorcycles`
+- `mountainbikes` → `mountainbiking`
+- `warhammer40k` → `warhammer`
+- `homestead` → `homesteading`
+- `bicycling` → `cycling`
+
+**Judgment calls (commented out, needs review):**
+- `bikepacking` → `bicycletouring` — similar ethos, likely high overlap
+- `whitewater` → `kayaking` — whitewater is more specific
+- `flyfishing` → `fishing` — may dilute signal
+- `diyaudio` / `diypedals` → `diyelectronics` — shared electronics hobbyist base
+- `mead` / `fermentation` → `homebrewing` — related but distinct hobbies
+- `trailrunning` → `running` — different enough to keep separate
+- `xcountryskiing` → `skiing` — very different communities
+
+To activate a judgment call: uncomment its line in `CANONICAL_SUBS` in `normalize.py`.
 
 ## Known issues / pending work
 

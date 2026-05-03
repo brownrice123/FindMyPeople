@@ -1,11 +1,15 @@
 import os
 import numpy as np
 import pandas as pd
+import duckdb
+
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 from metros import METROS
 
 CSV_DIR = "/Users/brianweiss/Projects/FindMyPeople/Reddit/csv/"
+CSV_CITIES_DIR = "/Users/brianweiss/Projects/FindMyPeople/Reddit/csv/cities/"
+CSV_INTERESTS_DIR = "/Users/brianweiss/Projects/FindMyPeople/Reddit/csv/interests/"
 OUTPUT_DIR = "/Users/brianweiss/Projects/FindMyPeople/Reddit/data/outputs/"
 
 METROS_SET = {m.lower() for m in METROS}
@@ -34,39 +38,94 @@ GEO_BLOCKLIST = {
     "seattle", "chicago", "austin",  # your own city subs
 }
 
+# Maps subreddit aliases → canonical name.
+# Applied after loading so both CSV files contribute to the same interest bucket.
+# Originals are preserved on disk — this only affects in-memory grouping.
+#
+# OBVIOUS MERGES: same community, different subreddit name
+CANONICAL_SUBS = {
+    "motorcycle":        "motorcycles",        # r/motorcycle and r/motorcycles are the same crowd
+    "mountainbikes":     "mountainbiking",     # r/mountainbikes vs r/mountainbiking
+    "warhammer40k":      "warhammer",          # 40k is the dominant game; merge into warhammer
+    "homestead":         "homesteading",       # r/homestead vs r/homesteading
+    "bicycling":         "cycling",            # r/bicycling (casual/commute) merged into r/cycling
+
+    # JUDGMENT CALLS: related but meaningfully distinct — review before confirming
+    # Uncomment to merge, leave commented to keep separate.
+
+    # Bike touring vs bikepacking: similar ethos, significant user overlap
+    # "bikepacking": "bicycletouring",
+
+    # Kayaking and whitewater: large overlap but whitewater is more specific
+    # "whitewater": "kayaking",
+
+    # Fishing and fly fishing: distinct enough that merging may dilute signal
+    # "flyfishing": "fishing",
+
+    # DIY electronics cluster: diyaudio/diyelectronics/diypedals share a lot of users
+    # "diyaudio":      "diyelectronics",
+    # "diypedals":     "diyelectronics",
+
+    # Fermentation cluster: homebrewing/mead/fermentation/cheesemaking are related
+    # but distinct hobbies — merging loses specificity
+    # "mead":          "homebrewing",
+    # "fermentation":  "homebrewing",
+
+    # Running: trail running and road running are different enough to keep separate
+    # "trailrunning": "running",
+
+    # Skiing: downhill and XC are very different communities
+    # "xcountryskiing": "skiing",
+}
+
+
 
 
 def load_data():
-    city_frames, interest_frames = [], []
+    con = duckdb.connect()
 
-    for fname in sorted(os.listdir(CSV_DIR)):
-        if not fname.endswith('.csv') or '_output' in fname:
-            continue
-        stem = fname.removesuffix('.csv').lower()
-        fpath = os.path.join(CSV_DIR, fname)
-        raw = pd.read_csv(fpath, usecols=['author', 'subreddit'])
-        raw = raw[raw['author'].notna() & (raw['author'].str.strip() != '[deleted]')]
-        raw['author'] = raw['author'].str.strip()
-        raw['subreddit'] = raw['subreddit'].str.strip().str.lower()
+    # Load city CSVs — filename becomes home_city
+    city_df = con.execute(f"""
+        SELECT
+            trim(author) AS author,
+            lower(regexp_replace(filename, '.*/([^/]+)\\.csv$', '\\1')) AS home_city
+        FROM read_csv(
+            '{CSV_CITIES_DIR}*.csv',
+            columns={{'author': 'VARCHAR', 'subreddit': 'VARCHAR'}},
+            filename=true,
+            ignore_errors=true
+        )
+        WHERE author IS NOT NULL
+          AND trim(author) != '[deleted]'
+        QUALIFY ROW_NUMBER() OVER (PARTITION BY trim(author)) = 1
+    """).df()
 
-        if stem in METROS_SET:
-            raw['home_city'] = stem
-            city_frames.append(raw[['author', 'home_city']].drop_duplicates('author'))
-        else:
-            interest_frames.append(raw[['author', 'subreddit']])
+    # Load interest CSVs
+    interest_df = con.execute(f"""
+        SELECT
+            trim(author) AS author,
+            lower(trim(subreddit)) AS subreddit
+        FROM read_csv(
+            '{CSV_INTERESTS_DIR}*.csv',
+            columns={{'author': 'VARCHAR', 'subreddit': 'VARCHAR'}},
+            ignore_errors=true
+        )
+        WHERE author IS NOT NULL
+          AND trim(author) != '[deleted]'
+    """).df()
 
-    city_df = pd.concat(city_frames, ignore_index=True).drop_duplicates('author')
-    interest_df = pd.concat(interest_frames, ignore_index=True)
+    con.close()
 
     df = (interest_df
-          .merge(city_df, on='author')
+          .merge(city_df[['author', 'home_city']], on='author')
           .rename(columns={'author': 'username'})
           .drop_duplicates(['username', 'subreddit']))
     df = df[~df['subreddit'].isin(BLOCKLIST)]
     df = df[~df['subreddit'].isin(METROS_SET)]
     df = df[~df['subreddit'].isin(GEO_BLOCKLIST)]
+    df['subreddit'] = df['subreddit'].map(lambda s: CANONICAL_SUBS.get(s, s))
+    df = df.drop_duplicates(['username', 'subreddit'])
     return df
-
 
 # ── interest × city ──────────────────────────────────────────────────────────
 
